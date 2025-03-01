@@ -2,7 +2,7 @@ name: Build and Deploy to GitHub Pages
 
 on:
   schedule:
-    - cron: "0 0 * * *" # Run daily at midnight UTC
+    - cron: "0 */4 * * *" # Run every 4 hours
   workflow_dispatch: # Allow manual triggering
 
 permissions:
@@ -51,6 +51,15 @@ jobs:
 
       - name: Setup Crawl4AI
         run: uv run crawl4ai-setup
+
+      - name: Restore hn_stories.json cache
+        id: cache-stories
+        uses: actions/cache@v4
+        with:
+          path: ./hn_stories.json
+          key: ${{ runner.os }}-hn-stories-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-hn-stories-
 
       - name: Run Python script to generate data
         env:
