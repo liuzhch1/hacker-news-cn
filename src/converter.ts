@@ -105,16 +105,16 @@ async function generateRssFeed(
   const feed = new Feed({
     title: "Hacker News AI 中文翻译",
     description: "Hacker News AI 中文翻译 每日更新",
-    id: "https://example.com/",
-    link: "https://example.com/",
+    id: "https://liuzhch1.github.io/hacker-news-cn/",
+    link: "https://liuzhch1.github.io/hacker-news-cn/",
     language: "zh-CN",
-    image: "https://example.com/image.png",
-    favicon: "https://example.com/favicon.ico",
+    image: "https://liuzhch1.github.io/hacker-news-cn/image.png",
+    favicon: "https://liuzhch1.github.io/hacker-news-cn/favicon.ico",
     copyright: "Hacker News",
     updated: new Date(),
     generator: "Hacker News Feed Generator",
     feedLinks: {
-      rss: "https://example.com/rss.xml",
+      rss: "https://liuzhch1.github.io/hacker-news-cn/rss.xml",
     },
     author: {
       name: "Hacker News AI 中文翻译",
@@ -139,18 +139,15 @@ async function generateRssFeed(
     feed.addItem({
       title: article.rewritten_title,
       id: article.id.toString(),
-      link: `https://example.com/${article.filename}`,
+      link: `https://liuzhch1.github.io/hacker-news-cn/${article.filename}`,
       description: plainTextDescription,
       content: htmlContent,
       author: [
         {
           name: "Hacker News AI 中文翻译",
-          email: "info@example.com",
-          link: "https://example.com/",
         },
       ],
       date: new Date(),
-      image: "https://example.com/image.png",
     });
   }
 
