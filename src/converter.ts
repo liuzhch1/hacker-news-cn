@@ -290,8 +290,8 @@ async function processJsonFile(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hacker News Posts | Hacker News AI 中文翻译 每日更新</title>
-  <meta name="description" content="Hacker News AI 中文翻译 每日更新">
+  <title>Hacker News Posts | Hacker News AI 中文翻译 每4小时更新</title>
+  <meta name="description" content="Hacker News AI 中文翻译 每4小时更新">
   <link rel="stylesheet" href="./css/style.css">
   <link rel="alternate" type="application/rss+xml" title="RSS Feed" href="./rss.xml">
 </head>
