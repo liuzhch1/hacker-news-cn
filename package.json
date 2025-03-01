@@ -1,0 +1,29 @@
+{
+  "name": "hacker-news-feed",
+  "version": "1.0.0",
+  "description": "Tool to convert markdown content to HTML files",
+  "main": "dist/converter.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --loader ts-node/esm src/converter.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "markdown",
+    "html",
+    "converter"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/fs-extra": "11.0.4",
+    "@types/node": "22.13.8",
+    "feed": "^4.2.2",
+    "fs-extra": "11.3.0",
+    "remark": "15.0.1",
+    "remark-html": "16.0.1",
+    "ts-node": "10.9.2",
+    "typescript": "5.8.2"
+  }
+}

@@ -1,0 +1,7 @@
+[project]
+name = "hacker-news-ai-translation"
+version = "0.1.0"
+description = "Hacker News AI 中文翻译 每日更新"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = ["crawl4ai>=0.4.248", "google-genai>=1.2.0", "markdown>=3.7"]
