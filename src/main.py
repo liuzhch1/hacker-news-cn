@@ -14,6 +14,12 @@ async def rewrite_article(title, content):
     prompt = f"""用中文重写下面这篇文章和标题，尽量保持原文的格式和意思。使用 Markdown 格式输出。
 内容是从网页上爬取的，移除没有意义的内容、移出原文中和内容无关的部分。
 
+重要规则：
+1. 不要翻译专有名词、技术术语、产品名称、公司名称和人名，保留原文
+2. 例如：JavaScript、Python、React、Vue、Docker、Kubernetes、GitHub、OpenAI、Deno 等技术名词保持原样
+3. 标题要符合中文表达习惯，但保留原文中的关键技术词汇
+4. 内容要通顺易懂，适合中文读者阅读
+
 标题: {title}
 
 正文:
