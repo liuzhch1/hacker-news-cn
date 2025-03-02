@@ -9,6 +9,39 @@ from google import genai
 from google.genai import types
 
 
+async def summarize_article(title, content):
+    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+    prompt = f"""用中文总结下面这篇文章的主要内容，不超过200字。保持内容精炼、准确，突出文章的核心观点和关键信息。
+
+重要规则：
+1. 不要翻译专有名词、技术术语、产品名称、公司名称和人名，保留原文
+2. 例如：JavaScript、Python、React、Vue、Docker、Kubernetes、GitHub、OpenAI、Deno 等技术名词保持原样
+3. 总结要通顺易懂，适合中文读者快速了解文章要点
+4. 严格控制在200字以内
+5. 直接开始总结内容，不要以"文章讲述了"、"这篇文章介绍了"等固定开头
+6. 使用简洁、直接的表达方式，避免套话和重复内容
+
+标题: {title}
+
+正文:
+{content}
+"""
+
+    response = await client.aio.models.generate_content(
+        model="gemini-2.0-flash-lite",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.2,
+            top_p=0.95,
+            top_k=64,
+            candidate_count=1,
+            max_output_tokens=500,
+        ),
+    )
+
+    return response.text.strip()
+
+
 async def rewrite_article(title, content):
     client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
     prompt = f"""用中文重写下面这篇文章和标题，尽量保持原文的格式和意思。使用 Markdown 格式输出。
@@ -116,6 +149,7 @@ async def process_stories(crawler, stories):
 
     processed_stories = []
     rewrite_tasks = []
+    summary_tasks = []
 
     # Create a mapping of URL to result for easier matching
     url_to_result = {result.url: result for result in results if result and hasattr(result, "url")}
@@ -140,6 +174,17 @@ async def process_stories(crawler, stories):
         try:
             rewritten_title, rewritten_content = await rewrite_task
 
+            # Create summary task
+            summary_task = asyncio.create_task(summarize_article(rewritten_title, rewritten_content))
+            summary_tasks.append((story, result, rewritten_title, rewritten_content, summary_task))
+        except Exception as e:
+            print(f"Error rewriting {story['title']}: {str(e)}")
+
+    # Wait for all summaries to complete
+    for story, result, rewritten_title, rewritten_content, summary_task in summary_tasks:
+        try:
+            summary = await summary_task
+
             processed_stories.append(
                 {
                     "id": story["id"],
@@ -147,11 +192,12 @@ async def process_stories(crawler, stories):
                     "url": story["url"],
                     "rewritten_title": rewritten_title,
                     "rewritten_content": rewritten_content,
+                    "summary": summary,
                     "original_content": result.markdown,
                 }
             )
         except Exception as e:
-            print(f"Error rewriting {story['title']}: {str(e)}")
+            print(f"Error summarizing {story['title']}: {str(e)}")
 
     return processed_stories
 

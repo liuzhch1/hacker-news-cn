@@ -250,6 +250,29 @@ img {
   margin-bottom: 0.2rem;
 }
 
+/* Article summary styles */
+.article-summary {
+  margin-top: 1rem;
+  color: #4b5563;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.article-summary-box {
+  background-color: #f0f9ff;
+  border-left: 4px solid #3b82f6;
+  border-radius: 4px;
+  padding: 1rem 1.5rem;
+  margin: 1.5rem 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #1e3a8a;
+}
+
 /* Article Cards */
 .article-card {
   border: 1px solid var(--border-color);

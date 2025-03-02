@@ -10,6 +10,7 @@ interface Article {
   rewritten_title: string;
   rewritten_content: string;
   original_content: string;
+  summary?: string;
 }
 
 interface ProcessedArticle {
@@ -18,6 +19,7 @@ interface ProcessedArticle {
   rewritten_title: string;
   url: string;
   filename: string;
+  summary?: string;
 }
 
 /**
@@ -31,29 +33,6 @@ async function markdownToHtml(markdown: string): Promise<string> {
   const result = await remark().use(remarkHtml.default).process(markdown);
 
   return result.toString();
-}
-
-/**
- * Creates a navigation HTML for articles
- */
-function createNavigation(
-  articles: ProcessedArticle[],
-  currentId?: number
-): string {
-  const navItems = articles.map((article) => {
-    const isActive = article.id === currentId;
-    const activeClass = isActive ? 'class="active"' : "";
-    return `<li><a href="${article.filename}" ${activeClass}>${article.rewritten_title}</a></li>`;
-  });
-
-  return `
-<div class="nav-container">
-  <div class="nav-title">Articles</div>
-  <ul class="nav-list">
-    ${currentId ? '<li><a href="index.html">← Back to Index</a></li>' : ""}
-    ${navItems.join("\n    ")}
-  </ul>
-</div>`;
 }
 
 /**
@@ -74,8 +53,15 @@ function createArticleCards(articles: ProcessedArticle[]): string {
       <h2><a href="${article.filename}">${article.rewritten_title}</a></h2>
       <div class="article-meta">
         <span class="original-title">${article.title}</span>
-        <a href="${article.url}" target="_blank" class="article-source">Source</a>
+        <a href="${
+          article.url
+        }" target="_blank" class="article-source">Source</a>
       </div>
+      ${
+        article.summary
+          ? `<div class="article-summary">${article.summary}</div>`
+          : ""
+      }
     </div>
   `
     )
@@ -219,6 +205,7 @@ async function processJsonFile(
         rewritten_title: article.rewritten_title || article.title,
         url: article.url,
         filename,
+        summary: article.summary,
       });
     }
 
@@ -269,6 +256,11 @@ async function processJsonFile(
       }" target="_blank" class="article-comments">HN Comments</a>
     </div>
   </div>
+  ${
+    article.summary
+      ? `<div class="article-summary-box">${article.summary}</div>`
+      : ""
+  }
   <div class="content">
     ${htmlContent}
   </div>
