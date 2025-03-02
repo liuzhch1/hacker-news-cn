@@ -122,10 +122,16 @@ async function generateRssFeed(
     if (!fullArticle) continue;
 
     // Convert markdown content to HTML
-    const sourceLink = `<p>Source: <a href="${fullArticle.url}" target="_blank">${fullArticle.url}</a></p>`;
+    const sourceLink = `<p>Source:<br/><a href="${fullArticle.url}" target="_blank">${fullArticle.url}</a></p>`;
     const separator = "<hr>";
     const markdownContent = await markdownToHtml(fullArticle.rewritten_content);
-    const htmlContent = `${sourceLink}${separator}${markdownContent}`;
+
+    // Add summary to feed content if available
+    const summaryHtml = fullArticle.summary
+      ? `<div>${fullArticle.summary}</div>${separator}`
+      : "";
+
+    const htmlContent = `${summaryHtml}${sourceLink}${separator}${markdownContent}`;
 
     // Create a short description (first 280 chars of content)
     const plainTextDescription =
