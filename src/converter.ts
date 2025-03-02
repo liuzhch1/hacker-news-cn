@@ -129,6 +129,7 @@ async function generateRssFeed(
 
     // Create a short description (first 280 chars of content)
     const plainTextDescription =
+      fullArticle.summary ||
       fullArticle.rewritten_content
         .replace(/[#*`_]/g, "") // Remove markdown formatting
         .substring(0, 280) + "...";
