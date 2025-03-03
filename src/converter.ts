@@ -49,8 +49,14 @@ function createArticleCards(articles: ProcessedArticle[]): string {
   return articles
     .map(
       (article) => `
-    <div class="article-card">
-      <h2><a href="${article.filename}">${article.rewritten_title}</a></h2>
+    <div class="article-card" data-article-id="${article.id}">
+      <div class="article-header">
+        <h2><a href="${article.filename}">${article.rewritten_title}</a></h2>
+        <button class="mark-read-btn" onclick="toggleRead(${article.id})">
+          <span class="mark-read-text">Mark as Read</span>
+          <span class="mark-unread-text">Mark as Unread</span>
+        </button>
+      </div>
       <div class="article-meta">
         <span class="original-title">${article.title}</span>
         <a href="${
@@ -318,6 +324,32 @@ async function processJsonFile(
   <a href="#top" class="back-to-top" title="Back to top">↑</a>
   
   ${footer}
+  <script>
+    function toggleRead(articleId) {
+      const card = document.querySelector(\`.article-card[data-article-id="\${articleId}"]\`);
+      const readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
+      
+      if (card.classList.contains('read')) {
+        card.classList.remove('read');
+        const index = readArticles.indexOf(articleId);
+        if (index > -1) readArticles.splice(index, 1);
+      } else {
+        card.classList.add('read');
+        if (!readArticles.includes(articleId)) readArticles.push(articleId);
+      }
+      
+      localStorage.setItem('readArticles', JSON.stringify(readArticles));
+    }
+
+    // Apply read status on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      const readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
+      readArticles.forEach(id => {
+        const card = document.querySelector(\`.article-card[data-article-id="\${id}"]\`);
+        if (card) card.classList.add('read');
+      });
+    });
+  </script>
 </body>
 </html>`;
 
