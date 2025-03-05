@@ -1,5 +1,5 @@
 [project]
-name = "hacker-news-ai-translation"
+name = "hacker-news-cn"
 version = "0.1.0"
 description = "Hacker News AI 中文翻译 每日更新"
 readme = "README.md"
