@@ -342,6 +342,7 @@ img {
   font-size: 0.85rem;
   color: #6b7280;
   transition: all 0.2s;
+  width: 125px;
 }
 
 .mark-read-btn:hover {
@@ -397,7 +398,7 @@ img {
 
 /* Footer */
 .footer {
-  margin-top: 4rem;
+  margin-top: 2rem;
   padding-top: 2rem;
   border-top: 1px solid var(--border-color);
   color: #6b7280;
@@ -425,4 +426,29 @@ img {
     width: 2.5rem;
     height: 2.5rem;
   }
+}
+
+/* Read All Button */
+.read-all-container {
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0;
+}
+
+.read-all-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.read-all-btn:hover {
+  border-color: #8f939b;
+}
+.read-all-btn:active {
+  background-color: rgba(0, 0, 0, 0.05);
 }

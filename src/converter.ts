@@ -321,6 +321,10 @@ async function processJsonFile(
     ${articleCards}
   </div>
   
+  <div class="read-all-container">
+    <button id="readAllBtn" class="read-all-btn">Mark All as Read</button>
+  </div>
+
   <a href="#top" class="back-to-top" title="Back to top">↑</a>
   
   ${footer}
@@ -341,6 +345,21 @@ async function processJsonFile(
       localStorage.setItem('readArticles', JSON.stringify(readArticles));
     }
 
+    function markAllAsRead() {
+      const allCards = document.querySelectorAll('.article-card');
+      const readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
+      
+      allCards.forEach(card => {
+        const articleId = parseInt(card.dataset.articleId);
+        card.classList.add('read');
+        if (!readArticles.includes(articleId)) {
+          readArticles.push(articleId);
+        }
+      });
+      
+      localStorage.setItem('readArticles', JSON.stringify(readArticles));
+    }
+
     // Apply read status on page load
     document.addEventListener('DOMContentLoaded', () => {
       const readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
@@ -348,6 +367,9 @@ async function processJsonFile(
         const card = document.querySelector(\`.article-card[data-article-id="\${id}"]\`);
         if (card) card.classList.add('read');
       });
+
+      // Add click handler for read all button
+      document.getElementById('readAllBtn').addEventListener('click', markAllAsRead);
     });
   </script>
 </body>
