@@ -5,7 +5,6 @@ import {
   S3Client,
   GetObjectCommand,
   PutObjectCommand,
-  ListObjectsV2Command,
 } from "@aws-sdk/client-s3";
 import { r2Config } from "./config";
 
@@ -183,17 +182,73 @@ function createFooter(): string {
 }
 
 /**
- * Creates a weekly navigation link
+ * Generates an HTML page for a single article
  */
-function createWeeklyNavigation(weekId: string): string {
-  return `
-  <div class="weekly-navigation">
-    <h2>当前周: ${weekId}</h2>
-    <p>
-      查看 <a href="./history/${weekId}.html">本周所有文章</a> 或 
-      浏览 <a href="./history/index.html">历史文章</a>
-    </p>
-  </div>`;
+async function generateArticlePage(
+  article: Article,
+  processedArticle: ProcessedArticle,
+  outputDir: string,
+  weekId: string
+): Promise<void> {
+  const articlesDir = outputDir;
+  await fs.ensureDir(articlesDir);
+
+  const articlePath = path.join(articlesDir, processedArticle.filename);
+
+  // Convert markdown content to HTML
+  const contentHtml = await markdownToHtml(
+    article.rewritten_content || article.original_content
+  );
+
+  const articleHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${processedArticle.rewritten_title}</title>
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body id="top">
+  <div class="back-to-index">
+    <a href="../index.html">← Back to Latest</a>
+    <br/>
+    <a href="../history/${weekId}.html">← Back to Week ${weekId}</a>
+  </div>
+  
+  <article class="article-content">
+    <h1>${processedArticle.rewritten_title}</h1>
+    <div class="article-meta">
+      <span class="original-title">${processedArticle.title}</span>
+      <div>
+        <a href="${
+          processedArticle.url
+        }" target="_blank" class="article-source">Source</a> | 
+        <a href="https://news.ycombinator.com/item?id=${
+          processedArticle.id
+        }" target="_blank" class="article-comments">HN Comments</a>
+      </div>
+    </div>
+    
+    ${
+      processedArticle.summary
+        ? `<div class="article-summary-box">${processedArticle.summary}</div>`
+        : ""
+    }
+    
+    <div class="article-body">
+      ${contentHtml}
+    </div>
+  </article>
+  
+  <a href="#top" class="back-to-top" title="Back to top">↑</a>
+  
+  ${createFooter()}
+</body>
+</html>`;
+
+  await fs.writeFile(articlePath, articleHtml);
+  console.log(`Generated article page: ${articlePath}`);
 }
 
 async function generateWeeklyPage(
@@ -223,6 +278,17 @@ async function generateWeeklyPage(
       };
     }
   );
+
+  // Generate individual article pages
+  for (const [index, processedArticle] of processedArticles.entries()) {
+    const article = weeklyData.articles[index];
+    await generateArticlePage(
+      article,
+      processedArticle,
+      outputDir,
+      weeklyData.weekId
+    );
+  }
 
   const articleCards = createArticleCards(processedArticles, true);
 
@@ -515,64 +581,9 @@ async function processJsonFile(
     );
 
     // Generate individual article pages
-    for (const article of latestArticles) {
-      try {
-        const htmlContent = await markdownToHtml(article.rewritten_content);
-        const sanitizedTitle = article.title
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, "");
-
-        const filename = `${article.id}-${sanitizedTitle}.html`;
-        const outputPath = path.join(outputDir, filename);
-
-        const backToIndex = createBackToIndex();
-        const footer = createFooter();
-
-        const fullHtml = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${article.rewritten_title || article.title}</title>
-  <link rel="stylesheet" href="./css/style.css">
-</head>
-<body id="top">
-  ${backToIndex}
-  
-  <h1>${article.rewritten_title || article.title}</h1>
-  <div class="article-meta">
-    <span class="original-title">${article.title}</span>
-    <div>
-      <a href="${
-        article.url
-      }" target="_blank" class="article-source">Source</a> | 
-      <a href="https://news.ycombinator.com/item?id=${
-        article.id
-      }" target="_blank" class="article-comments">HN Comments</a>
-    </div>
-  </div>
-  ${
-    article.summary
-      ? `<div class="article-summary-box">${article.summary}</div>`
-      : ""
-  }
-  <div class="content">
-    ${htmlContent}
-  </div>
-  
-  <a href="#top" class="back-to-top" title="Back to top">↑</a>
-  
-  ${footer}
-</body>
-</html>`;
-
-        await fs.writeFile(outputPath, fullHtml);
-        console.log(`Processed article ${article.id}: ${outputPath}`);
-      } catch (err) {
-        console.error(`Error processing article ${article.id}:`, err);
-      }
+    for (const [index, processedArticle] of processedArticles.entries()) {
+      const article = latestArticles[index];
+      await generateArticlePage(article, processedArticle, outputDir, weekId);
     }
 
     // Create index.html with latest articles and weekly navigation
