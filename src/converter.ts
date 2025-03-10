@@ -119,13 +119,6 @@ async function markdownToHtml(markdown: string): Promise<string> {
 }
 
 /**
- * Creates a simple back to index link
- */
-function createBackToIndex(): string {
-  return `<div class="back-to-index"><a href="index.html">← Back to Index</a></div>`;
-}
-
-/**
  * Creates a card-based list of articles for the index page
  */
 function createArticleCards(
@@ -313,6 +306,10 @@ async function generateWeeklyPage(
     ${articleCards}
   </div>
   
+  <div class="read-all-container">
+    <button id="readAllBtn" class="read-all-btn">Mark All as Read</button>
+  </div>
+  
   <a href="#top" class="back-to-top" title="Back to top">↑</a>
   
   ${createFooter()}
@@ -333,12 +330,30 @@ async function generateWeeklyPage(
       localStorage.setItem('readArticles', JSON.stringify(readArticles));
     }
 
+    function markAllAsRead() {
+      const allCards = document.querySelectorAll('.article-card');
+      const readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
+      
+      allCards.forEach(card => {
+        const articleId = card.getAttribute('data-article-id');
+        card.classList.add('read');
+        if (!readArticles.includes(parseInt(articleId))) {
+          readArticles.push(parseInt(articleId));
+        }
+      });
+      
+      localStorage.setItem('readArticles', JSON.stringify(readArticles));
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
       readArticles.forEach(id => {
         const card = document.querySelector(\`.article-card[data-article-id="\${id}"]\`);
         if (card) card.classList.add('read');
       });
+      
+      // Add event listener for Mark All as Read button
+      document.getElementById('readAllBtn').addEventListener('click', markAllAsRead);
     });
   </script>
 </body>
@@ -509,18 +524,21 @@ function createInfoCard(weekId: string): string {
  */
 async function processJsonFile(
   inputFilePath: string,
-  outputDir: string
+  outputDir: string,
+  r2Client?: S3Client
 ): Promise<void> {
   try {
-    // Create R2 client
-    const r2Client = new S3Client({
-      region: "auto",
-      endpoint: `https://${r2Config.accountId}.r2.cloudflarestorage.com`,
-      credentials: {
-        accessKeyId: r2Config.accessKeyId,
-        secretAccessKey: r2Config.secretAccessKey,
-      },
-    });
+    // Create R2 client if not provided
+    if (!r2Client) {
+      r2Client = new S3Client({
+        region: "auto",
+        endpoint: `https://${r2Config.accountId}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: r2Config.accessKeyId,
+          secretAccessKey: r2Config.secretAccessKey,
+        },
+      });
+    }
 
     // Create output directory if it doesn't exist
     await fs.ensureDir(outputDir);
@@ -555,6 +573,13 @@ async function processJsonFile(
 
     // Generate weekly history page
     await generateWeeklyPage(weeklyData, outputDir);
+    console.log(
+      `Generated weekly history page: ${path.join(
+        outputDir,
+        "history",
+        `${weekId}.html`
+      )}`
+    );
 
     // Generate history index page
     const availableWeeks = await listWeeklyFiles(r2Client);
@@ -678,6 +703,60 @@ async function processJsonFile(
   }
 }
 
+/**
+ * Generates weekly pages for all weeks pulled from R2
+ */
+async function generateAllWeeklyPages(
+  r2Client: S3Client,
+  outputDir: string
+): Promise<void> {
+  try {
+    // Get all available weeks
+    const availableWeeks = await listWeeklyFiles(r2Client);
+    console.log(`Found ${availableWeeks.length} weekly files to process`);
+
+    // Process each week
+    for (const weekId of availableWeeks) {
+      try {
+        console.log(`Processing weekly file for ${weekId}...`);
+
+        // Get the weekly data from R2
+        const { GetObjectCommand } = await import("@aws-sdk/client-s3");
+        const command = new GetObjectCommand({
+          Bucket: r2Config.bucketName,
+          Key: `weekly/${weekId}.json`,
+        });
+
+        const response = await r2Client.send(command);
+        const bodyContents = await response.Body?.transformToString();
+
+        if (!bodyContents) {
+          console.error(`Empty or missing file for week ${weekId}`);
+          continue;
+        }
+
+        const weeklyData: WeeklyArticles = JSON.parse(bodyContents);
+
+        // Generate the weekly page
+        await generateWeeklyPage(weeklyData, outputDir);
+        console.log(`Generated weekly page for ${weekId}`);
+      } catch (error) {
+        console.error(`Error processing weekly file for ${weekId}:`, error);
+        // Continue with next week even if one fails
+      }
+    }
+
+    // Generate history index page with all weeks
+    await generateHistoryIndexPage(availableWeeks, outputDir);
+    console.log("Generated history index page");
+
+    console.log("All weekly pages generated successfully!");
+  } catch (error) {
+    console.error("Error generating all weekly pages:", error);
+    throw error;
+  }
+}
+
 // Check if this file is being run directly
 const isMainModule = import.meta.url === `file://${process.argv[1]}`;
 
@@ -687,23 +766,44 @@ if (isMainModule) {
 
   if (args.length < 2) {
     console.error(
-      "Usage: node --loader ts-node/esm src/converter.ts <input-json-file> <output-directory>"
+      "Usage: node --loader ts-node/esm src/converter.ts <input-json-file> <output-directory> [--all-weeks]"
     );
     process.exit(1);
   }
 
   const [inputFilePath, outputDir] = args;
+  const generateAllWeeks = args.includes("--all-weeks");
 
   // Run the main function
-  processJsonFile(inputFilePath, outputDir)
-    .then(() => {
+  (async () => {
+    try {
+      // Create R2 client
+      const r2Client = new S3Client({
+        region: "auto",
+        endpoint: `https://${r2Config.accountId}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: r2Config.accessKeyId,
+          secretAccessKey: r2Config.secretAccessKey,
+        },
+      });
+
+      // Process the input JSON file first
+      await processJsonFile(inputFilePath, outputDir, r2Client);
+      console.log("Input file processed successfully!");
+
+      // If --all-weeks flag is provided, generate pages for all weeks
+      if (generateAllWeeks) {
+        console.log("Generating pages for all weeks...");
+        await generateAllWeeklyPages(r2Client, outputDir);
+      }
+
       console.log("Conversion completed successfully!");
-    })
-    .catch((err) => {
+    } catch (err) {
       console.error("Conversion failed:", err);
       process.exit(1);
-    });
+    }
+  })();
 }
 
 // Export for potential use as a module
-export { processJsonFile, markdownToHtml };
+export { processJsonFile, markdownToHtml, generateAllWeeklyPages };

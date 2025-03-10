@@ -517,6 +517,12 @@ img {
 
 /* Remove old styles */
 .content-description,
-.weekly-navigation {
-  display: none;
+.content-description p {
+  margin-bottom: 1rem;
 }
+
+.content-description p {
+  margin-bottom: 1rem;
+}
+
+/* We're using read-all-container and read-all-btn classes instead */

@@ -7,6 +7,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node --loader ts-node/esm src/converter.ts",
+    "generate-all-weeks": "node --loader ts-node/esm src/generate-all-weeks.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

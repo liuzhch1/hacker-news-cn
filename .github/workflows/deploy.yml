@@ -67,7 +67,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        run: pnpm start ./hn_stories.json ./output
+        run: pnpm start ./hn_stories.json ./output --all-weeks
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
